@@ -1,6 +1,6 @@
 {
   "name": "twit-mcp",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "X/Twitter data MCP server powered by x402 micropayments. Pay per request in USDC on Base.",
   "type": "module",
   "main": "dist/index.js",
