@@ -51,6 +51,16 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
 claude mcp add -e WALLET_PRIVATE_KEY=0xYourPrivateKeyHere twit -- npx -y twit-mcp
 ```
 
+### OpenClaw
+
+In OpenClaw chat:
+
+```
+/install twit-mcp
+```
+
+Then set `WALLET_PRIVATE_KEY` in OpenClaw's environment settings.
+
 ### Cursor
 
 Add to your Cursor MCP settings:
