@@ -201,6 +201,97 @@ server.tool(
   },
 );
 
+// ── Communities ───────────────────────────────────────────────────────────────
+
+server.tool(
+  'get_community_by_id',
+  'Retrieve details of an X Community by its numeric ID. Returns name, description, member count, join policy, topic, rules, banner image, and admin/creator profiles. Not available in the official X API.',
+  {
+    id: z.string().describe('Numeric community ID (e.g. "1506789406203695107")'),
+  },
+  async ({ id }) => {
+    const data = await call(`/communities/by/id?id=${id}`);
+    return { content: [{ type: 'text' as const, text: JSON.stringify(data, null, 2) }] };
+  },
+);
+
+server.tool(
+  'get_community_posts',
+  'Retrieve top-ranked posts from an X Community. Returns ~20 tweets per page with author profiles. Use next_token to paginate. Not available in the official X API.',
+  {
+    id: z.string().describe('Numeric community ID'),
+    next_token: z.string().optional().describe('Pagination cursor from a previous response meta.next_token'),
+  },
+  async ({ id, next_token }) => {
+    let path = `/communities/posts?id=${id}`;
+    if (next_token) path += `&next_token=${encodeURIComponent(next_token)}`;
+    const data = await call(path);
+    return { content: [{ type: 'text' as const, text: JSON.stringify(data, null, 2) }] };
+  },
+);
+
+server.tool(
+  'get_community_members',
+  'Retrieve members of an X Community. Returns 10–20 user profiles per page with community role (Admin, Moderator, Member). Use next_token to paginate. Not available in the official X API.',
+  {
+    id: z.string().describe('Numeric community ID'),
+    next_token: z.string().optional().describe('Pagination cursor from a previous response meta.next_token'),
+  },
+  async ({ id, next_token }) => {
+    let path = `/communities/members?id=${id}`;
+    if (next_token) path += `&next_token=${encodeURIComponent(next_token)}`;
+    const data = await call(path);
+    return { content: [{ type: 'text' as const, text: JSON.stringify(data, null, 2) }] };
+  },
+);
+
+// ── Tweet engagement ──────────────────────────────────────────────────────────
+
+server.tool(
+  'get_tweet_replies',
+  'Retrieve replies to a tweet. Returns ~30 reply tweets per page with author profiles. Use next_token to paginate.',
+  {
+    id: z.string().describe('Numeric tweet ID'),
+    next_token: z.string().optional().describe('Pagination cursor from a previous response meta.next_token'),
+  },
+  async ({ id, next_token }) => {
+    let path = `/tweets/replies?id=${id}`;
+    if (next_token) path += `&next_token=${encodeURIComponent(next_token)}`;
+    const data = await call(path);
+    return { content: [{ type: 'text' as const, text: JSON.stringify(data, null, 2) }] };
+  },
+);
+
+server.tool(
+  'get_tweet_quote_tweets',
+  'Retrieve tweets that quote a specific tweet. Returns ~20 quote tweets per page with author profiles. Use next_token to paginate.',
+  {
+    id: z.string().describe('Numeric tweet ID'),
+    next_token: z.string().optional().describe('Pagination cursor from a previous response meta.next_token'),
+  },
+  async ({ id, next_token }) => {
+    let path = `/tweets/quote_tweets?id=${id}`;
+    if (next_token) path += `&next_token=${encodeURIComponent(next_token)}`;
+    const data = await call(path);
+    return { content: [{ type: 'text' as const, text: JSON.stringify(data, null, 2) }] };
+  },
+);
+
+server.tool(
+  'get_tweet_retweeted_by',
+  'Retrieve users who reposted a specific tweet. Returns ~20 user profiles per page. Use next_token to paginate.',
+  {
+    id: z.string().describe('Numeric tweet ID'),
+    next_token: z.string().optional().describe('Pagination cursor from a previous response meta.next_token'),
+  },
+  async ({ id, next_token }) => {
+    let path = `/tweets/retweeted_by?id=${id}`;
+    if (next_token) path += `&next_token=${encodeURIComponent(next_token)}`;
+    const data = await call(path);
+    return { content: [{ type: 'text' as const, text: JSON.stringify(data, null, 2) }] };
+  },
+);
+
 // ── Start ─────────────────────────────────────────────────────────────────────
 
 const transport = new StdioServerTransport();

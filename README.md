@@ -12,8 +12,14 @@ An MCP server that gives AI agents real-time access to X/Twitter data through [t
 | `get_user_followers` | Get a user's followers (paginated) | $0.01 USDC |
 | `get_user_following` | Get accounts a user follows (paginated) | $0.01 USDC |
 | `get_users` | Bulk lookup up to 50 users by ID | $0.01 USDC |
+| `get_community_by_id` | Get community details by ID | $0.0025 USDC |
+| `get_community_posts` | Get top posts from a community (paginated) | $0.01 USDC |
+| `get_community_members` | Get community members with roles (paginated) | $0.01 USDC |
 | `get_tweet_by_id` | Get a tweet by its ID | $0.0025 USDC |
 | `get_user_tweets` | Get a user's recent tweets (paginated) | $0.01 USDC |
+| `get_tweet_replies` | Get replies to a tweet (paginated) | $0.01 USDC |
+| `get_tweet_quote_tweets` | Get quote tweets for a tweet (paginated) | $0.01 USDC |
+| `get_tweet_retweeted_by` | Get users who reposted a tweet (paginated) | $0.01 USDC |
 | `search_tweets` | Full-archive tweet search with filters | $0.01 USDC |
 | `get_tweets` | Bulk lookup up to 50 tweets by ID | $0.01 USDC |
 
