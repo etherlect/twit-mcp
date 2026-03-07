@@ -217,7 +217,7 @@ server.tool(
 
 server.tool(
   'get_community_posts',
-  'Retrieve top-ranked posts from an X Community. Returns ~20 tweets per page with author profiles. Use next_token to paginate. Not available in the official X API.',
+  'Retrieve latest posts from an X Community. Returns ~20 tweets per page with author profiles. Use next_token to paginate. Not available in the official X API.',
   {
     id: z.string().describe('Numeric community ID'),
     next_token: z.string().optional().describe('Pagination cursor from a previous response meta.next_token'),
@@ -286,6 +286,65 @@ server.tool(
   },
   async ({ id, next_token }) => {
     let path = `/tweets/retweeted_by?id=${id}`;
+    if (next_token) path += `&next_token=${encodeURIComponent(next_token)}`;
+    const data = await call(path);
+    return { content: [{ type: 'text' as const, text: JSON.stringify(data, null, 2) }] };
+  },
+);
+
+// ── Lists ─────────────────────────────────────────────────────────────────────
+
+server.tool(
+  'get_list_by_id',
+  'Retrieve details of a specific Twitter/X List by its numeric ID. Returns name, description, mode, member count, subscriber count, creation date, banner image, and owner profile.',
+  {
+    id: z.string().describe('Numeric Twitter/X List ID'),
+  },
+  async ({ id }) => {
+    const data = await call(`/lists/by/id?id=${id}`);
+    return { content: [{ type: 'text' as const, text: JSON.stringify(data, null, 2) }] };
+  },
+);
+
+server.tool(
+  'get_list_members',
+  'Retrieve members of a Twitter/X List. Returns up to 100 user profiles per page. Use next_token to paginate.',
+  {
+    id: z.string().describe('Numeric Twitter/X List ID'),
+    next_token: z.string().optional().describe('Pagination cursor from a previous response meta.next_token'),
+  },
+  async ({ id, next_token }) => {
+    let path = `/lists/members?id=${id}`;
+    if (next_token) path += `&next_token=${encodeURIComponent(next_token)}`;
+    const data = await call(path);
+    return { content: [{ type: 'text' as const, text: JSON.stringify(data, null, 2) }] };
+  },
+);
+
+server.tool(
+  'get_list_followers',
+  'Retrieve users who follow a specific Twitter/X List. Returns up to 20 user profiles per page. Use next_token to paginate.',
+  {
+    id: z.string().describe('Numeric Twitter/X List ID'),
+    next_token: z.string().optional().describe('Pagination cursor from a previous response meta.next_token'),
+  },
+  async ({ id, next_token }) => {
+    let path = `/lists/followers?id=${id}`;
+    if (next_token) path += `&next_token=${encodeURIComponent(next_token)}`;
+    const data = await call(path);
+    return { content: [{ type: 'text' as const, text: JSON.stringify(data, null, 2) }] };
+  },
+);
+
+server.tool(
+  'get_list_tweets',
+  'Retrieve the latest tweets from a Twitter/X List. Returns ~100 tweets per page with author profiles. Use next_token to paginate.',
+  {
+    id: z.string().describe('Numeric Twitter/X List ID'),
+    next_token: z.string().optional().describe('Pagination cursor from a previous response meta.next_token'),
+  },
+  async ({ id, next_token }) => {
+    let path = `/lists/tweets?id=${id}`;
     if (next_token) path += `&next_token=${encodeURIComponent(next_token)}`;
     const data = await call(path);
     return { content: [{ type: 'text' as const, text: JSON.stringify(data, null, 2) }] };
