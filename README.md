@@ -85,7 +85,7 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
 ### Claude Code
 
 ```bash
-claude mcp add -e WALLET_PRIVATE_KEY=0xYourPrivateKeyHere twit -- npx -y twit-mcp
+claude mcp add twit -e WALLET_PRIVATE_KEY=0xYourPrivateKeyHere -- npx -y twit-mcp
 ```
 
 ### OpenClaw
