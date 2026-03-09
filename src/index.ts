@@ -9,6 +9,8 @@ import { privateKeyToAccount } from 'viem/accounts';
 import { createPublicClient, http } from 'viem';
 import { base } from 'viem/chains';
 import { z } from 'zod';
+import { chromium } from 'playwright';
+import { loadCredentials, saveCredentials, clearCredentials, CREDS_PATH } from './auth.js';
 import 'dotenv/config';
 
 // ── Config ────────────────────────────────────────────────────────────────────
@@ -348,6 +350,167 @@ server.tool(
     if (next_token) path += `&next_token=${encodeURIComponent(next_token)}`;
     const data = await call(path);
     return { content: [{ type: 'text' as const, text: JSON.stringify(data, null, 2) }] };
+  },
+);
+
+// ── Post tweet ────────────────────────────────────────────────────────────────
+
+server.tool(
+  'post_tweet',
+  'Post a new tweet/post as the authenticated Twitter/X user. Requires Twitter credentials — use connect_twitter first if not already connected.',
+  {
+    text: z.string().max(280).describe('The content of the tweet (max 280 characters)'),
+  },
+  async ({ text }) => {
+    const creds = loadCredentials();
+    if (!creds?.authToken || !creds?.ct0) {
+      return {
+        content: [{
+          type: 'text' as const,
+          text: 'No Twitter account connected. Use connect_twitter to authenticate first.',
+        }],
+      };
+    }
+
+    const res = await fetchWithPayment(`${API_BASE}/tweets`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text, auth_token: creds.authToken, ct0: creds.ct0 }),
+    });
+
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error(`API error ${res.status}: ${err}`);
+    }
+
+    const data = await res.json();
+    return { content: [{ type: 'text' as const, text: JSON.stringify(data, null, 2) }] };
+  },
+);
+
+// ── Delete tweet ──────────────────────────────────────────────────────────────
+
+server.tool(
+  'delete_tweet',
+  'Delete a tweet/post by its ID. Only works for tweets owned by the authenticated user. Requires Twitter credentials — use connect_twitter first if not already connected.',
+  {
+    id: z.string().describe('Numeric tweet ID to delete'),
+  },
+  async ({ id }) => {
+    const creds = loadCredentials();
+    if (!creds?.authToken || !creds?.ct0) {
+      return {
+        content: [{
+          type: 'text' as const,
+          text: 'No Twitter account connected. Use connect_twitter to authenticate first.',
+        }],
+      };
+    }
+
+    const params = new URLSearchParams({ id, auth_token: creds.authToken, ct0: creds.ct0 });
+    const res = await fetchWithPayment(`${API_BASE}/tweets?${params}`, { method: 'DELETE' });
+
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error(`API error ${res.status}: ${err}`);
+    }
+
+    const data = await res.json();
+    return { content: [{ type: 'text' as const, text: JSON.stringify(data, null, 2) }] };
+  },
+);
+
+// ── Twitter auth ──────────────────────────────────────────────────────────────
+
+server.tool(
+  'connect_twitter',
+  'Connect your Twitter/X account by opening a browser window. Logs in via x.com and stores session cookies locally for posting tweets. Credentials are saved to ~/.twit-mcp-credentials.json.',
+  {},
+  async () => {
+    const browser = await chromium.launch({
+      headless: false,
+      channel: 'chrome',
+      args: ['--disable-blink-features=AutomationControlled'],
+    });
+    const context = await browser.newContext();
+    await context.addInitScript(() => {
+      Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
+    });
+    const page = await context.newPage();
+
+    await page.goto('https://x.com');
+
+    // Poll for auth_token + ct0 cookies (up to 3 minutes)
+    let creds: { authToken: string; ct0: string; username?: string } | null = null;
+
+    for (let i = 0; i < 180; i++) {
+      const cookies = await context.cookies('https://x.com');
+      const authToken = cookies.find((c) => c.name === 'auth_token');
+      const ct0 = cookies.find((c) => c.name === 'ct0');
+
+      if (authToken && ct0) {
+        // Try to get username from page
+        let username: string | undefined;
+        try {
+          const handle = await page.$eval(
+            'a[data-testid="AppTabBar_Profile_Link"]',
+            (el) => el.getAttribute('href')
+          );
+          username = handle?.replace('/', '') ?? undefined;
+        } catch {
+          // username is optional
+        }
+
+        creds = { authToken: authToken.value, ct0: ct0.value, username };
+        break;
+      }
+
+      await page.waitForTimeout(1000);
+    }
+
+    await browser.close();
+
+    if (!creds) {
+      throw new Error('Timed out waiting for login (3 minutes). Please try again.');
+    }
+
+    saveCredentials(creds);
+
+    const who = creds.username ? `@${creds.username}` : 'your account';
+    return {
+      content: [{
+        type: 'text' as const,
+        text: `Connected ${who} successfully. Credentials saved to Claude Desktop config. Please restart Claude Desktop for them to take effect.`,
+      }],
+    };
+  },
+);
+
+server.tool(
+  'disconnect_twitter',
+  'Disconnect your Twitter/X account by clearing stored session credentials.',
+  {},
+  async () => {
+    const existing = loadCredentials();
+    if (!existing?.authToken) {
+      return { content: [{ type: 'text' as const, text: 'No Twitter account connected.' }] };
+    }
+    clearCredentials();
+    return { content: [{ type: 'text' as const, text: 'Disconnected. Credentials removed from Claude Desktop config. Please restart Claude Desktop.' }] };
+  },
+);
+
+server.tool(
+  'twitter_account_status',
+  'Check whether a Twitter/X account is currently connected.',
+  {},
+  async () => {
+    const creds = loadCredentials();
+    if (!creds?.authToken) {
+      return { content: [{ type: 'text' as const, text: 'No Twitter account connected. Use connect_twitter to connect.' }] };
+    }
+    const who = creds.username ? `@${creds.username}` : 'an account';
+    return { content: [{ type: 'text' as const, text: `Connected as ${who}.` }] };
   },
 );
 

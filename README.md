@@ -4,6 +4,8 @@ An MCP server that gives AI agents real-time access to X/Twitter data through [t
 
 ## Tools
 
+### Users
+
 | Tool | Description | Price |
 |------|-------------|-------|
 | `get_user_by_username` | Get a user profile by username | $0.005 USDC |
@@ -12,9 +14,11 @@ An MCP server that gives AI agents real-time access to X/Twitter data through [t
 | `get_user_followers` | Get a user's followers (paginated) | $0.01 USDC |
 | `get_user_following` | Get accounts a user follows (paginated) | $0.01 USDC |
 | `get_users` | Bulk lookup up to 50 users by ID | $0.01 USDC |
-| `get_community_by_id` | Get community details by ID | $0.0025 USDC |
-| `get_community_posts` | Get top posts from a community (paginated) | $0.01 USDC |
-| `get_community_members` | Get community members with roles (paginated) | $0.01 USDC |
+
+### Tweets
+
+| Tool | Description | Price |
+|------|-------------|-------|
 | `get_tweet_by_id` | Get a tweet by its ID | $0.0025 USDC |
 | `get_user_tweets` | Get a user's recent tweets (paginated) | $0.01 USDC |
 | `get_tweet_replies` | Get replies to a tweet (paginated) | $0.01 USDC |
@@ -22,6 +26,33 @@ An MCP server that gives AI agents real-time access to X/Twitter data through [t
 | `get_tweet_retweeted_by` | Get users who reposted a tweet (paginated) | $0.01 USDC |
 | `search_tweets` | Full-archive tweet search with filters | $0.01 USDC |
 | `get_tweets` | Bulk lookup up to 50 tweets by ID | $0.01 USDC |
+| `post_tweet` | Post a new tweet as the authenticated user | $0.0025 USDC |
+| `delete_tweet` | Delete a tweet owned by the authenticated user | $0.0025 USDC |
+
+### Lists
+
+| Tool | Description | Price |
+|------|-------------|-------|
+| `get_list_by_id` | Get list details by numeric ID | $0.0025 USDC |
+| `get_list_members` | Get members of a list (paginated) | $0.01 USDC |
+| `get_list_followers` | Get followers of a list (paginated) | $0.01 USDC |
+| `get_list_tweets` | Get latest tweets from a list (paginated) | $0.01 USDC |
+
+### Communities
+
+| Tool | Description | Price |
+|------|-------------|-------|
+| `get_community_by_id` | Get community details by ID | $0.0025 USDC |
+| `get_community_posts` | Get latest posts from a community (paginated) | $0.01 USDC |
+| `get_community_members` | Get community members with roles (paginated) | $0.01 USDC |
+
+### Twitter Auth
+
+| Tool | Description |
+|------|-------------|
+| `connect_twitter` | Connect your Twitter/X account (opens browser) |
+| `twitter_account_status` | Check if a Twitter account is connected |
+| `disconnect_twitter` | Disconnect and clear stored credentials |
 
 ## Requirements
 
@@ -85,6 +116,17 @@ Add to your Cursor MCP settings:
 }
 ```
 
+## Posting Tweets
+
+To post tweets, you need to connect your Twitter/X account first:
+
+1. Ask your agent: **"connect my Twitter"** or **"connect my X"**
+2. A Chrome window will open at x.com — log in if prompted
+3. The agent confirms connection and saves credentials to your Claude Desktop config
+4. Restart Claude Desktop, then ask the agent to post for you
+
+Credentials are stored as environment variables in your Claude Desktop config (`TWITTER_AUTH_TOKEN`, `TWITTER_CT0`).
+
 ## How It Works
 
 1. Your agent calls a tool (e.g. `get_user_tweets`)
@@ -102,6 +144,9 @@ Your private key never leaves your machine. It is only used locally to sign EIP-
 |----------|----------|-------------|
 | `WALLET_PRIVATE_KEY` | Yes | Private key of the wallet that will pay for requests (hex, `0x`-prefixed) |
 | `API_BASE` | No | Override the API base URL (default: `https://x402.twit.sh`) |
+| `TWITTER_AUTH_TOKEN` | Auto | Set automatically by `connect_twitter` |
+| `TWITTER_CT0` | Auto | Set automatically by `connect_twitter` |
+| `TWITTER_USERNAME` | Auto | Set automatically by `connect_twitter` |
 
 ## Links
 
