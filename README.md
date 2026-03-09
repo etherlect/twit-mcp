@@ -118,14 +118,14 @@ Add to your Cursor MCP settings:
 
 ## Posting Tweets
 
-To post tweets, you need to connect your Twitter/X account first:
+To post or delete tweets, you need to connect your Twitter/X account first:
 
 1. Ask your agent: **"connect my Twitter"** or **"connect my X"**
 2. A Chrome window will open at x.com — log in if prompted
-3. The agent confirms connection and saves credentials to your Claude Desktop config
-4. Restart Claude Desktop, then ask the agent to post for you
+3. The agent confirms connection and saves credentials locally
+4. Ask the agent to post or delete tweets — no restart needed
 
-Credentials are stored as environment variables in your Claude Desktop config (`TWITTER_AUTH_TOKEN`, `TWITTER_CT0`).
+Credentials are stored in `~/.twit-mcp-credentials.json` (macOS/Linux) or `C:\Users\<you>\.twit-mcp-credentials.json` (Windows).
 
 ## How It Works
 
@@ -144,9 +144,6 @@ Your private key never leaves your machine. It is only used locally to sign EIP-
 |----------|----------|-------------|
 | `WALLET_PRIVATE_KEY` | Yes | Private key of the wallet that will pay for requests (hex, `0x`-prefixed) |
 | `API_BASE` | No | Override the API base URL (default: `https://x402.twit.sh`) |
-| `TWITTER_AUTH_TOKEN` | Auto | Set automatically by `connect_twitter` |
-| `TWITTER_CT0` | Auto | Set automatically by `connect_twitter` |
-| `TWITTER_USERNAME` | Auto | Set automatically by `connect_twitter` |
 
 ## Links
 
