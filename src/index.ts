@@ -480,7 +480,7 @@ server.tool(
     return {
       content: [{
         type: 'text' as const,
-        text: `Connected ${who} successfully. Credentials saved to Claude Desktop config. Please restart Claude Desktop for them to take effect.`,
+        text: `Connected ${who} successfully. Credentials saved to ~/.twit-mcp-credentials.json — ready to use immediately.`,
       }],
     };
   },
@@ -496,7 +496,7 @@ server.tool(
       return { content: [{ type: 'text' as const, text: 'No Twitter account connected.' }] };
     }
     clearCredentials();
-    return { content: [{ type: 'text' as const, text: 'Disconnected. Credentials removed from Claude Desktop config. Please restart Claude Desktop.' }] };
+    return { content: [{ type: 'text' as const, text: 'Disconnected. Credentials cleared from ~/.twit-mcp-credentials.json.' }] };
   },
 );
 
