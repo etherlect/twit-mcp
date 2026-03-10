@@ -4,16 +4,11 @@ An MCP server that gives AI agents real-time access to X/Twitter data through [t
 
 ## Tools
 
-### Users
+### Articles
 
 | Tool | Description | Price |
 |------|-------------|-------|
-| `get_user_by_username` | Get a user profile by username | $0.005 USDC |
-| `get_user_by_id` | Get a user profile by numeric ID | $0.005 USDC |
-| `search_users` | Search users by keyword (paginated) | $0.01 USDC |
-| `get_user_followers` | Get a user's followers (paginated) | $0.01 USDC |
-| `get_user_following` | Get accounts a user follows (paginated) | $0.01 USDC |
-| `get_users` | Bulk lookup up to 50 users by ID | $0.01 USDC |
+| `get_article_by_id` | Get the full content of an X Article as Markdown by tweet ID. Not in official X API. | $0.01 USDC |
 
 ### Tweets
 
@@ -28,6 +23,25 @@ An MCP server that gives AI agents real-time access to X/Twitter data through [t
 | `get_tweets` | Bulk lookup up to 50 tweets by ID | $0.01 USDC |
 | `post_tweet` | Post a new tweet as the authenticated user | $0.0025 USDC |
 | `delete_tweet` | Delete a tweet owned by the authenticated user | $0.0025 USDC |
+| `like_tweet` | Like a tweet as the authenticated user | $0.0075 USDC |
+| `unlike_tweet` | Unlike a tweet as the authenticated user | $0.005 USDC |
+| `bookmark_tweet` | Bookmark a tweet | $0.0025 USDC |
+| `unbookmark_tweet` | Remove a tweet from bookmarks | $0.0025 USDC |
+| `retweet` | Repost a tweet as the authenticated user | $0.0075 USDC |
+| `unretweet` | Undo a repost | $0.005 USDC |
+
+### Users
+
+| Tool | Description | Price |
+|------|-------------|-------|
+| `get_user_by_username` | Get a user profile by username | $0.005 USDC |
+| `get_user_by_id` | Get a user profile by numeric ID | $0.005 USDC |
+| `search_users` | Search users by keyword (paginated) | $0.01 USDC |
+| `get_user_followers` | Get a user's followers (paginated) | $0.01 USDC |
+| `get_user_following` | Get accounts a user follows (paginated) | $0.01 USDC |
+| `get_users` | Bulk lookup up to 50 users by ID | $0.01 USDC |
+| `follow_user` | Follow a user as the authenticated user | $0.0075 USDC |
+| `unfollow_user` | Unfollow a user as the authenticated user | $0.005 USDC |
 
 ### Lists
 
@@ -42,9 +56,9 @@ An MCP server that gives AI agents real-time access to X/Twitter data through [t
 
 | Tool | Description | Price |
 |------|-------------|-------|
-| `get_community_by_id` | Get community details by ID | $0.0025 USDC |
-| `get_community_posts` | Get latest posts from a community (paginated) | $0.01 USDC |
-| `get_community_members` | Get community members with roles (paginated) | $0.01 USDC |
+| `get_community_by_id` | Get community details by ID. Not in official X API. | $0.0025 USDC |
+| `get_community_posts` | Get latest posts from a community (paginated). Not in official X API. | $0.01 USDC |
+| `get_community_members` | Get community members with roles (paginated). Not in official X API. | $0.01 USDC |
 
 ### Twitter Auth
 

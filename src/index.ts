@@ -148,6 +148,18 @@ server.tool(
 );
 
 server.tool(
+  'get_article_by_id',
+  'Retrieve the full content of an X Article by the tweet ID of the post that hosts it. Returns article title, preview text, cover image, publish date, and full article_content as Markdown (headings, bold, italic, lists, images). Not available in the official X API.',
+  {
+    id: z.string().describe('Numeric tweet ID of the X Article post (e.g. "2010751592346030461")'),
+  },
+  async ({ id }) => {
+    const data = await call(`/articles/by/id?id=${id}`);
+    return { content: [{ type: 'text' as const, text: JSON.stringify(data, null, 2) }] };
+  },
+);
+
+server.tool(
   'get_user_tweets',
   "Retrieve a user's recent tweets/posts. Returns ~20 tweets per page. Use next_token to paginate.",
   {
@@ -357,11 +369,13 @@ server.tool(
 
 server.tool(
   'post_tweet',
-  'Post a new tweet/post as the authenticated Twitter/X user. Requires Twitter credentials — use connect_twitter first if not already connected.',
+  'Post a new tweet/post as the authenticated Twitter/X user, or reply to an existing tweet. Requires Twitter credentials — use connect_twitter first if not already connected.',
   {
     text: z.string().max(280).describe('The content of the tweet (max 280 characters)'),
+    in_reply_to_tweet_id: z.string().optional().describe('Numeric tweet ID to reply to (optional)'),
+    quote_tweet_id: z.string().optional().describe('Numeric tweet ID to quote (optional)'),
   },
-  async ({ text }) => {
+  async ({ text, in_reply_to_tweet_id, quote_tweet_id }) => {
     const creds = loadCredentials();
     if (!creds?.authToken || !creds?.ct0) {
       return {
@@ -375,8 +389,288 @@ server.tool(
     const res = await fetchWithPayment(`${API_BASE}/tweets`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text, auth_token: creds.authToken, ct0: creds.ct0 }),
+      body: JSON.stringify({
+        text,
+        auth_token: creds.authToken,
+        ct0: creds.ct0,
+        ...(in_reply_to_tweet_id && { in_reply_to_tweet_id }),
+        ...(quote_tweet_id && { quote_tweet_id }),
+      }),
     });
+
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error(`API error ${res.status}: ${err}`);
+    }
+
+    const data = await res.json();
+    return { content: [{ type: 'text' as const, text: JSON.stringify(data, null, 2) }] };
+  },
+);
+
+// ── Retweet ───────────────────────────────────────────────────────────────────
+
+server.tool(
+  'retweet',
+  'Repost (retweet) a tweet by its ID as the authenticated Twitter/X user. Requires Twitter credentials — use connect_twitter first if not already connected.',
+  {
+    id: z.string().describe('Numeric tweet ID to retweet'),
+  },
+  async ({ id }) => {
+    const creds = loadCredentials();
+    if (!creds?.authToken || !creds?.ct0) {
+      return {
+        content: [{
+          type: 'text' as const,
+          text: 'No Twitter account connected. Use connect_twitter to authenticate first.',
+        }],
+      };
+    }
+
+    const params = new URLSearchParams({ id, auth_token: creds.authToken, ct0: creds.ct0 });
+    const res = await fetchWithPayment(`${API_BASE}/tweets/retweet?${params}`, { method: 'POST' });
+
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error(`API error ${res.status}: ${err}`);
+    }
+
+    const data = await res.json();
+    return { content: [{ type: 'text' as const, text: JSON.stringify(data, null, 2) }] };
+  },
+);
+
+// ── Like tweet ────────────────────────────────────────────────────────────────
+
+server.tool(
+  'like_tweet',
+  'Like a tweet by its ID as the authenticated Twitter/X user. Requires Twitter credentials — use connect_twitter first if not already connected.',
+  {
+    id: z.string().describe('Numeric tweet ID to like'),
+  },
+  async ({ id }) => {
+    const creds = loadCredentials();
+    if (!creds?.authToken || !creds?.ct0) {
+      return {
+        content: [{
+          type: 'text' as const,
+          text: 'No Twitter account connected. Use connect_twitter to authenticate first.',
+        }],
+      };
+    }
+
+    const params = new URLSearchParams({ id, auth_token: creds.authToken, ct0: creds.ct0 });
+    const res = await fetchWithPayment(`${API_BASE}/tweets/like?${params}`, { method: 'POST' });
+
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error(`API error ${res.status}: ${err}`);
+    }
+
+    const data = await res.json();
+    return { content: [{ type: 'text' as const, text: JSON.stringify(data, null, 2) }] };
+  },
+);
+
+// ── Follow user ───────────────────────────────────────────────────────────────
+
+server.tool(
+  'follow_user',
+  'Follow a Twitter/X user by their ID or username as the authenticated user. Pass either id or username — one is required. Requires Twitter credentials — use connect_twitter first if not already connected.',
+  {
+    id: z.string().optional().describe('Numeric Twitter/X user ID to follow'),
+    username: z.string().optional().describe('Screen name to follow (without @)'),
+  },
+  async ({ id, username }) => {
+    const creds = loadCredentials();
+    if (!creds?.authToken || !creds?.ct0) {
+      return {
+        content: [{
+          type: 'text' as const,
+          text: 'No Twitter account connected. Use connect_twitter to authenticate first.',
+        }],
+      };
+    }
+
+    if (!id && !username) {
+      return { content: [{ type: 'text' as const, text: 'Error: provide either id or username' }] };
+    }
+
+    const queryParams: Record<string, string> = { auth_token: creds.authToken, ct0: creds.ct0 };
+    if (id) queryParams.id = id;
+    else queryParams.username = username!;
+
+    const params = new URLSearchParams(queryParams);
+    const res = await fetchWithPayment(`${API_BASE}/users/following?${params}`, { method: 'POST' });
+
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error(`API error ${res.status}: ${err}`);
+    }
+
+    const data = await res.json();
+    return { content: [{ type: 'text' as const, text: JSON.stringify(data, null, 2) }] };
+  },
+);
+
+// ── Unfollow user ─────────────────────────────────────────────────────────────
+
+server.tool(
+  'unfollow_user',
+  'Unfollow a Twitter/X user by their ID or username as the authenticated user. Pass either id or username — one is required. Requires Twitter credentials — use connect_twitter first if not already connected.',
+  {
+    id: z.string().optional().describe('Numeric Twitter/X user ID to unfollow'),
+    username: z.string().optional().describe('Screen name to unfollow (without @)'),
+  },
+  async ({ id, username }) => {
+    const creds = loadCredentials();
+    if (!creds?.authToken || !creds?.ct0) {
+      return {
+        content: [{
+          type: 'text' as const,
+          text: 'No Twitter account connected. Use connect_twitter to authenticate first.',
+        }],
+      };
+    }
+
+    if (!id && !username) {
+      return { content: [{ type: 'text' as const, text: 'Error: provide either id or username' }] };
+    }
+
+    const queryParams: Record<string, string> = { auth_token: creds.authToken, ct0: creds.ct0 };
+    if (id) queryParams.id = id;
+    else queryParams.username = username!;
+
+    const params = new URLSearchParams(queryParams);
+    const res = await fetchWithPayment(`${API_BASE}/users/following?${params}`, { method: 'DELETE' });
+
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error(`API error ${res.status}: ${err}`);
+    }
+
+    const data = await res.json();
+    return { content: [{ type: 'text' as const, text: JSON.stringify(data, null, 2) }] };
+  },
+);
+
+// ── Bookmark tweet ────────────────────────────────────────────────────────────
+
+server.tool(
+  'bookmark_tweet',
+  'Add a tweet to the authenticated user\'s bookmarks by its ID. Requires Twitter credentials — use connect_twitter first if not already connected.',
+  {
+    id: z.string().describe('Numeric tweet ID to bookmark'),
+  },
+  async ({ id }) => {
+    const creds = loadCredentials();
+    if (!creds?.authToken || !creds?.ct0) {
+      return {
+        content: [{
+          type: 'text' as const,
+          text: 'No Twitter account connected. Use connect_twitter to authenticate first.',
+        }],
+      };
+    }
+
+    const params = new URLSearchParams({ id, auth_token: creds.authToken, ct0: creds.ct0 });
+    const res = await fetchWithPayment(`${API_BASE}/tweets/bookmark?${params}`, { method: 'POST' });
+
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error(`API error ${res.status}: ${err}`);
+    }
+
+    const data = await res.json();
+    return { content: [{ type: 'text' as const, text: JSON.stringify(data, null, 2) }] };
+  },
+);
+
+// ── Remove bookmark ────────────────────────────────────────────────────────────
+
+server.tool(
+  'unbookmark_tweet',
+  'Remove a tweet from the authenticated user\'s bookmarks by its ID. Requires Twitter credentials — use connect_twitter first if not already connected.',
+  {
+    id: z.string().describe('Numeric tweet ID to remove from bookmarks'),
+  },
+  async ({ id }) => {
+    const creds = loadCredentials();
+    if (!creds?.authToken || !creds?.ct0) {
+      return {
+        content: [{
+          type: 'text' as const,
+          text: 'No Twitter account connected. Use connect_twitter to authenticate first.',
+        }],
+      };
+    }
+
+    const params = new URLSearchParams({ id, auth_token: creds.authToken, ct0: creds.ct0 });
+    const res = await fetchWithPayment(`${API_BASE}/tweets/bookmark?${params}`, { method: 'DELETE' });
+
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error(`API error ${res.status}: ${err}`);
+    }
+
+    const data = await res.json();
+    return { content: [{ type: 'text' as const, text: JSON.stringify(data, null, 2) }] };
+  },
+);
+
+// ── Unlike tweet ──────────────────────────────────────────────────────────────
+
+server.tool(
+  'unlike_tweet',
+  'Remove a like (unlike) from a tweet by its ID as the authenticated Twitter/X user. Requires Twitter credentials — use connect_twitter first if not already connected.',
+  {
+    id: z.string().describe('Numeric tweet ID to unlike'),
+  },
+  async ({ id }) => {
+    const creds = loadCredentials();
+    if (!creds?.authToken || !creds?.ct0) {
+      return {
+        content: [{
+          type: 'text' as const,
+          text: 'No Twitter account connected. Use connect_twitter to authenticate first.',
+        }],
+      };
+    }
+
+    const params = new URLSearchParams({ id, auth_token: creds.authToken, ct0: creds.ct0 });
+    const res = await fetchWithPayment(`${API_BASE}/tweets/like?${params}`, { method: 'DELETE' });
+
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error(`API error ${res.status}: ${err}`);
+    }
+
+    const data = await res.json();
+    return { content: [{ type: 'text' as const, text: JSON.stringify(data, null, 2) }] };
+  },
+);
+
+// ── Unretweet ─────────────────────────────────────────────────────────────────
+
+server.tool(
+  'unretweet',
+  'Remove a retweet (unrepost) by tweet ID as the authenticated Twitter/X user. Requires Twitter credentials — use connect_twitter first if not already connected.',
+  {
+    id: z.string().describe('Numeric tweet ID to unretweet'),
+  },
+  async ({ id }) => {
+    const creds = loadCredentials();
+    if (!creds?.authToken || !creds?.ct0) {
+      return {
+        content: [{
+          type: 'text' as const,
+          text: 'No Twitter account connected. Use connect_twitter to authenticate first.',
+        }],
+      };
+    }
+
+    const params = new URLSearchParams({ id, auth_token: creds.authToken, ct0: creds.ct0 });
+    const res = await fetchWithPayment(`${API_BASE}/tweets/retweet?${params}`, { method: 'DELETE' });
 
     if (!res.ok) {
       const err = await res.text();
