@@ -104,13 +104,21 @@ claude mcp add twit -e WALLET_PRIVATE_KEY=0xYourPrivateKeyHere -- npx -y twit-mc
 
 ### OpenClaw
 
-In OpenClaw chat:
+Add to your OpenClaw MCP config file (`~/.openclaw/mcp.json`):
 
+```json
+{
+  "mcpServers": {
+    "twit": {
+      "command": "npx",
+      "args": ["-y", "twit-mcp"],
+      "env": {
+        "WALLET_PRIVATE_KEY": "0xYourPrivateKeyHere"
+      }
+    }
+  }
+}
 ```
-/install twit-mcp
-```
-
-Then set `WALLET_PRIVATE_KEY` in OpenClaw's environment settings.
 
 ### Cursor
 
